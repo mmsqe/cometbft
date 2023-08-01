@@ -20,16 +20,7 @@ import (
 	"github.com/cometbft/cometbft/version"
 )
 
-func TestRollback(t *testing.T) {
-	var (
-		height     int64 = 100
-		nextHeight int64 = 101
-	)
-	blockStore := &mocks.BlockStore{}
-	stateStore := setupStateStore(t, height)
-	initialState, err := stateStore.Load()
-	require.NoError(t, err)
-
+func setupNextState(initialState state.State, nextHeight, diff int64) state.State {
 	// perform the rollback over a version bump
 	newParams := types.DefaultConsensusParams()
 	newParams.Version.App = 11
@@ -43,12 +34,12 @@ func TestRollback(t *testing.T) {
 	nextState.Validators = initialState.NextValidators
 	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
 	nextState.ConsensusParams = *newParams
-	nextState.LastHeightConsensusParamsChanged = nextHeight + 1
-	nextState.LastHeightValidatorsChanged = nextHeight + 1
+	nextState.LastHeightConsensusParamsChanged = nextHeight + diff
+	nextState.LastHeightValidatorsChanged = nextHeight + diff
+	return nextState
+}
 
-	// update the state
-	require.NoError(t, stateStore.Save(nextState))
-
+func setupBlocks(initialState, nextState state.State) (*types.BlockMeta, *types.BlockMeta) {
 	block := &types.BlockMeta{
 		BlockID: initialState.LastBlockID,
 		Header: types.Header{
@@ -69,9 +60,29 @@ func TestRollback(t *testing.T) {
 			LastResultsHash: nextState.LastResultsHash,
 		},
 	}
+	return block, nextBlock
+}
+
+func TestRollback(t *testing.T) {
+	var (
+		height     int64 = 100
+		nextHeight int64 = 101
+	)
+	blockStore := &mocks.BlockStore{}
+	stateStore := setupStateStore(t, height)
+	initialState, err := stateStore.Load()
+	require.NoError(t, err)
+	nextState := setupNextState(initialState, nextHeight, 1)
+
+	// update the state
+	require.NoError(t, stateStore.Save(nextState))
+
+	block, nextBlock := setupBlocks(initialState, nextState)
 	blockStore.On("LoadBlockMeta", height).Return(block)
 	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock)
 	blockStore.On("Height").Return(nextHeight)
+	_, _, err = state.Rollback(blockStore, stateStore, false)
+	require.NoError(t, err)
 
 	// rollback the state
 	rollbackHeight, rollbackHash, err := state.Rollback(blockStore, stateStore, false)
@@ -95,46 +106,12 @@ func TestRollbackLastHeightOver2(t *testing.T) {
 	stateStore := setupStateStore(t, height)
 	initialState, err := stateStore.Load()
 	require.NoError(t, err)
-
-	// perform the rollback over a version bump
-	newParams := types.DefaultConsensusParams()
-	newParams.Version.App = 11
-	newParams.Block.MaxBytes = 1000
-	nextState := initialState.Copy()
-	nextState.LastBlockHeight = nextHeight
-	nextState.Version.Consensus.App = 11
-	nextState.LastBlockID = makeBlockIDRandom()
-	nextState.AppHash = tmhash.Sum([]byte("app_hash"))
-	nextState.LastValidators = initialState.Validators
-	nextState.Validators = initialState.NextValidators
-	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
-	nextState.ConsensusParams = *newParams
-	nextState.LastHeightConsensusParamsChanged = nextHeight + 2
-	nextState.LastHeightValidatorsChanged = nextHeight + 2
+	nextState := setupNextState(initialState, nextHeight, 2)
 
 	// update the state
 	require.NoError(t, stateStore.Save(nextState))
 
-	block := &types.BlockMeta{
-		BlockID: initialState.LastBlockID,
-		Header: types.Header{
-			Height:          initialState.LastBlockHeight,
-			Time:            initialState.LastBlockTime,
-			AppHash:         crypto.CRandBytes(tmhash.Size),
-			LastBlockID:     makeBlockIDRandom(),
-			LastResultsHash: initialState.LastResultsHash,
-		},
-	}
-	nextBlock := &types.BlockMeta{
-		BlockID: initialState.LastBlockID,
-		Header: types.Header{
-			Height:          nextState.LastBlockHeight,
-			Time:            nextState.LastBlockTime,
-			AppHash:         initialState.AppHash,
-			LastBlockID:     block.BlockID,
-			LastResultsHash: nextState.LastResultsHash,
-		},
-	}
+	block, nextBlock := setupBlocks(initialState, nextState)
 	blockStore.On("LoadBlockMeta", height).Return(block)
 	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock)
 	blockStore.On("Height").Return(nextHeight)

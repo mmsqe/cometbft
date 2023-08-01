@@ -86,6 +86,68 @@ func TestRollback(t *testing.T) {
 	require.EqualValues(t, initialState, loadedState)
 }
 
+func TestRollbackLastHeightOver2(t *testing.T) {
+	var (
+		height     int64 = 100
+		nextHeight int64 = 101
+	)
+	blockStore := &mocks.BlockStore{}
+	stateStore := setupStateStore(t, height)
+	initialState, err := stateStore.Load()
+	require.NoError(t, err)
+
+	// perform the rollback over a version bump
+	newParams := types.DefaultConsensusParams()
+	newParams.Version.App = 11
+	newParams.Block.MaxBytes = 1000
+	nextState := initialState.Copy()
+	nextState.LastBlockHeight = nextHeight
+	nextState.Version.Consensus.App = 11
+	nextState.LastBlockID = makeBlockIDRandom()
+	nextState.AppHash = tmhash.Sum([]byte("app_hash"))
+	nextState.LastValidators = initialState.Validators
+	nextState.Validators = initialState.NextValidators
+	nextState.NextValidators = initialState.NextValidators.CopyIncrementProposerPriority(1)
+	nextState.ConsensusParams = *newParams
+	nextState.LastHeightConsensusParamsChanged = nextHeight + 2
+	nextState.LastHeightValidatorsChanged = nextHeight + 2
+
+	// update the state
+	require.NoError(t, stateStore.Save(nextState))
+
+	block := &types.BlockMeta{
+		BlockID: initialState.LastBlockID,
+		Header: types.Header{
+			Height:          initialState.LastBlockHeight,
+			Time:            initialState.LastBlockTime,
+			AppHash:         crypto.CRandBytes(tmhash.Size),
+			LastBlockID:     makeBlockIDRandom(),
+			LastResultsHash: initialState.LastResultsHash,
+		},
+	}
+	nextBlock := &types.BlockMeta{
+		BlockID: initialState.LastBlockID,
+		Header: types.Header{
+			Height:          nextState.LastBlockHeight,
+			Time:            nextState.LastBlockTime,
+			AppHash:         initialState.AppHash,
+			LastBlockID:     block.BlockID,
+			LastResultsHash: nextState.LastResultsHash,
+		},
+	}
+	blockStore.On("LoadBlockMeta", height).Return(block)
+	blockStore.On("LoadBlockMeta", nextHeight).Return(nextBlock)
+	blockStore.On("Height").Return(nextHeight)
+
+	_, _, err = state.Rollback(blockStore, stateStore, false)
+	require.NoError(t, err)
+
+	loadedState, err := stateStore.Load()
+	require.NoError(t, err)
+	require.Equal(t, height+2, loadedState.LastHeightValidatorsChanged)
+	require.Equal(t, height+1, loadedState.LastHeightConsensusParamsChanged)
+}
+
 func TestRollbackHard(t *testing.T) {
 	const height int64 = 100
 	blockStore := store.NewBlockStore(dbm.NewMemDB())

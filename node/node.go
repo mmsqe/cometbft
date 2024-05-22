@@ -533,6 +533,11 @@ func createMempoolAndMempoolReactor(
 				mempoolv0.WithMetrics(memplMetrics),
 				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
 				mempoolv0.WithPostCheck(sm.TxPostCheck(state)),
+				mempoolv0.WithNewTxCallback(func(tx types.Tx) {
+					eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+						Tx: tx,
+					})
+				}),
 			)
 
 			mp.SetLogger(logger)

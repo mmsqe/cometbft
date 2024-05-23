@@ -2,6 +2,7 @@
 package v1
 
 import (
+	"bytes"
 	"fmt"
 	"runtime"
 	"sort"
@@ -372,6 +373,20 @@ func (txmp *TxMempool) ReapMaxTxs(max int) types.Txs {
 		keep = append(keep, w.tx)
 	}
 	return keep
+}
+
+// FilterTx returns the types.Tx with the given hash if found in the mempool, otherwise returns nil.
+func (txmp *TxMempool) FilterTx(hash []byte) types.Tx {
+	txmp.mtx.RLock()
+	defer txmp.mtx.RUnlock()
+
+	for _, tx := range txmp.txByKey {
+		w := tx.Value.(*WrappedTx)
+		if bytes.Equal(w.tx.Hash(), hash) {
+			return w.tx
+		}
+	}
+	return nil
 }
 
 // Update removes all the given transactions from the mempool and the cache,

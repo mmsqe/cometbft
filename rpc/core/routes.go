@@ -34,6 +34,7 @@ var Routes = map[string]*rpc.RPCFunc{
 	"dump_consensus_state": rpc.NewRPCFunc(DumpConsensusState, ""),
 	"consensus_state":      rpc.NewRPCFunc(ConsensusState, ""),
 	"consensus_params":     rpc.NewRPCFunc(ConsensusParams, "height", rpc.Cacheable("height")),
+	"unconfirmed_tx":       rpc.NewRPCFunc(UnconfirmedTx, "hash"),
 	"unconfirmed_txs":      rpc.NewRPCFunc(UnconfirmedTxs, "limit"),
 	"num_unconfirmed_txs":  rpc.NewRPCFunc(NumUnconfirmedTxs, ""),
 

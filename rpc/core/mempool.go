@@ -145,6 +145,13 @@ func BroadcastTxCommit(ctx *rpctypes.Context, tx types.Tx) (*ctypes.ResultBroadc
 	}
 }
 
+// UnconfirmedTx gets unconfirmed transaction by hash
+func UnconfirmedTx(ctx *rpctypes.Context, hash []byte) (*ctypes.ResultUnconfirmedTx, error) {
+	return &ctypes.ResultUnconfirmedTx{
+		Tx: env.Mempool.FilterTx(hash),
+	}, nil
+}
+
 // UnconfirmedTxs gets unconfirmed transactions (maximum ?limit entries)
 // including their number.
 // More: https://docs.cometbft.com/v0.37/rpc/#/Info/unconfirmed_txs

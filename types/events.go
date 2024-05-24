@@ -19,6 +19,7 @@ const (
 	EventNewBlock            = "NewBlock"
 	EventNewBlockHeader      = "NewBlockHeader"
 	EventNewEvidence         = "NewEvidence"
+	EventPendingTx           = "PendingTx"
 	EventTx                  = "Tx"
 	EventValidatorSetUpdates = "ValidatorSetUpdates"
 
@@ -80,6 +81,11 @@ type EventDataNewEvidence struct {
 	Evidence Evidence `json:"evidence"`
 
 	Height int64 `json:"height"`
+}
+
+// All txs fire EventDataPendingTx
+type EventDataPendingTx struct {
+	Tx []byte `json:"tx"`
 }
 
 // All txs fire EventDataTx
@@ -154,6 +160,7 @@ var (
 	EventQueryRelock              = QueryForEvent(EventRelock)
 	EventQueryTimeoutPropose      = QueryForEvent(EventTimeoutPropose)
 	EventQueryTimeoutWait         = QueryForEvent(EventTimeoutWait)
+	EventQueryPendingTx           = QueryForEvent(EventPendingTx)
 	EventQueryTx                  = QueryForEvent(EventTx)
 	EventQueryUnlock              = QueryForEvent(EventUnlock)
 	EventQueryValidatorSetUpdates = QueryForEvent(EventValidatorSetUpdates)
@@ -174,6 +181,7 @@ type BlockEventPublisher interface {
 	PublishEventNewBlock(block EventDataNewBlock) error
 	PublishEventNewBlockHeader(header EventDataNewBlockHeader) error
 	PublishEventNewEvidence(evidence EventDataNewEvidence) error
+	PublishEventPendingTx(EventDataPendingTx) error
 	PublishEventTx(EventDataTx) error
 	PublishEventValidatorSetUpdates(EventDataValidatorSetUpdates) error
 }

@@ -49,6 +49,7 @@ type TxMempool struct {
 	mtx                  *sync.RWMutex
 	notifiedTxsAvailable bool
 	txsAvailable         chan struct{} // one value sent per height when mempool is not empty
+	onNewTx              func(types.Tx)
 	preCheck             mempool.PreCheckFunc
 	postCheck            mempool.PostCheckFunc
 	height               int64 // the latest height passed to Update
@@ -108,6 +109,12 @@ func WithPostCheck(f mempool.PostCheckFunc) TxMempoolOption {
 // WithMetrics sets the mempool's metrics collector.
 func WithMetrics(metrics *mempool.Metrics) TxMempoolOption {
 	return func(txmp *TxMempool) { txmp.metrics = metrics }
+}
+
+// WithNewTxCallback sets a callback function to be executed when a new transaction is added to the mempool.
+// The callback function will receive the newly added transaction as a parameter.
+func WithNewTxCallback(cb func(types.Tx)) TxMempoolOption {
+	return func(txmp *TxMempool) { txmp.onNewTx = cb }
 }
 
 // Lock obtains a write-lock on the mempool. A caller must be sure to explicitly
@@ -591,6 +598,10 @@ func (txmp *TxMempool) addNewTransaction(wtx *WrappedTx, checkTxRes *abci.Respon
 		"num_txs", txmp.Size(),
 	)
 	txmp.notifyTxsAvailable()
+
+	if txmp.onNewTx != nil {
+		txmp.onNewTx(wtx.tx)
+	}
 }
 
 func (txmp *TxMempool) insertTx(wtx *WrappedTx) {

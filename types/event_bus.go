@@ -168,6 +168,15 @@ func (b *EventBus) PublishEventValidBlock(data EventDataRoundState) error {
 	return b.Publish(EventValidBlock, data)
 }
 
+func (b *EventBus) PublishEventPendingTx(data EventDataPendingTx) error {
+	// no explicit deadline for publishing events
+	ctx := context.Background()
+	return b.pubsub.PublishWithEvents(ctx, data, map[string][]string{
+		EventTypeKey: {EventPendingTx},
+		TxHashKey:    {fmt.Sprintf("%X", Tx(data.Tx).Hash())},
+	})
+}
+
 // PublishEventTx publishes tx event with events from Result. Note it will add
 // predefined keys (EventTypeKey, TxHashKey). Existing events with the same keys
 // will be overwritten.
@@ -258,6 +267,10 @@ func (NopEventBus) PublishEventNewEvidence(evidence EventDataNewEvidence) error 
 }
 
 func (NopEventBus) PublishEventVote(data EventDataVote) error {
+	return nil
+}
+
+func (NopEventBus) PublishEventPendingTx(data EventDataPendingTx) error {
 	return nil
 }
 

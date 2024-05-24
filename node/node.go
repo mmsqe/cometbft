@@ -491,6 +491,7 @@ func createMempoolAndMempoolReactor(
 	config *cfg.Config,
 	proxyApp proxy.AppConns,
 	state sm.State,
+	eventBus *types.EventBus,
 	memplMetrics *mempl.Metrics,
 	logger log.Logger,
 ) (mempl.Mempool, p2p.Reactor) {
@@ -507,6 +508,11 @@ func createMempoolAndMempoolReactor(
 				mempoolv1.WithMetrics(memplMetrics),
 				mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
 				mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
+				mempoolv1.WithNewTxCallback(func(tx types.Tx) {
+					eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+						Tx: tx,
+					})
+				}),
 			)
 
 			reactor := mempoolv1.NewReactor(
@@ -945,7 +951,7 @@ func NewNodeWithContext(ctx context.Context,
 
 	logNodeStartupInfo(state, pubKey, logger, consensusLogger)
 
-	mempool, mempoolReactor := createMempoolAndMempoolReactor(config, proxyApp, state, memplMetrics, logger)
+	mempool, mempoolReactor := createMempoolAndMempoolReactor(config, proxyApp, state, eventBus, memplMetrics, logger)
 
 	evidenceReactor, evidencePool, err := createEvidenceReactor(config, dbProvider, stateDB, blockStore, logger)
 

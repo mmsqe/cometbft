@@ -20,6 +20,7 @@ const (
 	EventNewBlockHeader      = "NewBlockHeader"
 	EventNewBlockEvents      = "NewBlockEvents"
 	EventNewEvidence         = "NewEvidence"
+	EventPendingTx           = "PendingTx"
 	EventTx                  = "Tx"
 	EventValidatorSetUpdates = "ValidatorSetUpdates"
 
@@ -82,6 +83,11 @@ type EventDataNewBlockEvents struct {
 type EventDataNewEvidence struct {
 	Height   int64    `json:"height"`
 	Evidence Evidence `json:"evidence"`
+}
+
+// All txs fire EventDataPendingTx.
+type EventDataPendingTx struct {
+	Tx []byte `json:"tx"`
 }
 
 // All txs fire EventDataTx
@@ -179,6 +185,7 @@ type BlockEventPublisher interface {
 	PublishEventNewBlockHeader(header EventDataNewBlockHeader) error
 	PublishEventNewBlockEvents(events EventDataNewBlockEvents) error
 	PublishEventNewEvidence(evidence EventDataNewEvidence) error
+	PublishEventPendingTx(tx EventDataPendingTx) error
 	PublishEventTx(EventDataTx) error
 	PublishEventValidatorSetUpdates(EventDataValidatorSetUpdates) error
 }

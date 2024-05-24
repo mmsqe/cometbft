@@ -225,6 +225,7 @@ func createMempoolAndMempoolReactor(
 	config *cfg.Config,
 	proxyApp proxy.AppConns,
 	state sm.State,
+	eventBus *types.EventBus,
 	memplMetrics *mempl.Metrics,
 	logger log.Logger,
 ) (mempl.Mempool, p2p.Reactor) {
@@ -239,6 +240,11 @@ func createMempoolAndMempoolReactor(
 			mempl.WithMetrics(memplMetrics),
 			mempl.WithPreCheck(sm.TxPreCheck(state)),
 			mempl.WithPostCheck(sm.TxPostCheck(state)),
+			mempl.WithNewTxCallback(func(tx types.Tx) {
+				_ = eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+					Tx: tx,
+				})
+			}),
 		)
 		mp.SetLogger(logger)
 		reactor := mempl.NewReactor(

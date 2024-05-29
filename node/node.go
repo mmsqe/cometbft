@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	dbm "github.com/cometbft/cometbft-db"
@@ -500,6 +501,21 @@ func createMempoolAndMempoolReactor(
 	case cfg.MempoolTypeFlood, "":
 		switch config.Mempool.Version {
 		case cfg.MempoolV1:
+			pendingTxLock := new(sync.Mutex)
+			pendingTxs := make([][]byte, 0)
+			go func() {
+				for {
+					pendingTxLock.Lock()
+					txs := pendingTxs
+					pendingTxs = make([][]byte, 0)
+					pendingTxLock.Unlock()
+					if len(txs) > 0 {
+						_ = eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+							Txs: txs,
+						})
+					}
+				}
+			}()
 			mp := mempoolv1.NewTxMempool(
 				logger,
 				config.Mempool,
@@ -509,12 +525,11 @@ func createMempoolAndMempoolReactor(
 				mempoolv1.WithPreCheck(sm.TxPreCheck(state)),
 				mempoolv1.WithPostCheck(sm.TxPostCheck(state)),
 				mempoolv1.WithNewTxCallback(func(tx types.Tx) {
-					eventBus.PublishEventPendingTx(types.EventDataPendingTx{
-						Tx: tx,
-					})
+					pendingTxLock.Lock()
+					defer pendingTxLock.Unlock()
+					pendingTxs = append(pendingTxs, tx)
 				}),
 			)
-
 			reactor := mempoolv1.NewReactor(
 				config.Mempool,
 				mp,
@@ -526,6 +541,21 @@ func createMempoolAndMempoolReactor(
 			return mp, reactor
 
 		case cfg.MempoolV0:
+			pendingTxLock := new(sync.Mutex)
+			pendingTxs := make([][]byte, 0)
+			go func() {
+				for {
+					pendingTxLock.Lock()
+					txs := pendingTxs
+					pendingTxs = make([][]byte, 0)
+					pendingTxLock.Unlock()
+					if len(txs) > 0 {
+						_ = eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+							Txs: txs,
+						})
+					}
+				}
+			}()
 			mp := mempoolv0.NewCListMempool(
 				config.Mempool,
 				proxyApp.Mempool(),
@@ -534,9 +564,9 @@ func createMempoolAndMempoolReactor(
 				mempoolv0.WithPreCheck(sm.TxPreCheck(state)),
 				mempoolv0.WithPostCheck(sm.TxPostCheck(state)),
 				mempoolv0.WithNewTxCallback(func(tx types.Tx) {
-					eventBus.PublishEventPendingTx(types.EventDataPendingTx{
-						Tx: tx,
-					})
+					pendingTxLock.Lock()
+					defer pendingTxLock.Unlock()
+					pendingTxs = append(pendingTxs, tx)
 				}),
 			)
 

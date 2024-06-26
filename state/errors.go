@@ -5,6 +5,12 @@ import (
 	"fmt"
 )
 
+var (
+	ErrFinalizeBlockResponsesNotPersisted = errors.New("node is not persisting finalize block responses")
+	ErrPrunerCannotLowerRetainHeight      = errors.New("cannot set a height lower than previously requested - heights might have already been pruned")
+	ErrInvalidRetainHeight                = errors.New("retain height cannot be less or equal than 0")
+)
+
 type (
 	ErrInvalidBlock error
 	ErrProxyAppConn error
@@ -49,6 +55,14 @@ type (
 	}
 
 	ErrNoABCIResponsesForHeight struct {
+		Height int64
+	}
+
+	ErrABCIResponseResponseUnmarshalForHeight struct {
+		Height int64
+	}
+
+	ErrABCIResponseCorruptedOrSpecChangeForHeight struct {
 		Height int64
 	}
 )
@@ -103,4 +117,10 @@ func (e ErrNoABCIResponsesForHeight) Error() string {
 	return fmt.Sprintf("could not find results for height #%d", e.Height)
 }
 
-var ErrFinalizeBlockResponsesNotPersisted = errors.New("node is not persisting finalize block responses")
+func (e ErrABCIResponseResponseUnmarshalForHeight) Error() string {
+	return fmt.Sprintf("could not decode results for height %d", e.Height)
+}
+
+func (e ErrABCIResponseCorruptedOrSpecChangeForHeight) Error() string {
+	return fmt.Sprintf("could not retrieve results for height %d", e.Height)
+}

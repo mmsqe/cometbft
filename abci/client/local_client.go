@@ -2,6 +2,8 @@ package abcicli
 
 import (
 	"context"
+	"fmt"
+	"time"
 
 	types "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/service"
@@ -45,9 +47,15 @@ func (app *localClient) SetResponseCallback(cb Callback) {
 }
 
 func (app *localClient) CheckTxAsync(ctx context.Context, req *types.RequestCheckTx) (*ReqRes, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-CheckTxAsync[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-CheckTxAsync[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	res, err := app.Application.CheckTx(ctx, req)
 	if err != nil {
 		return nil, err
@@ -93,9 +101,15 @@ func (app *localClient) Info(ctx context.Context, req *types.RequestInfo) (*type
 }
 
 func (app *localClient) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-CheckTx[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-CheckTx[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.CheckTx(ctx, req)
 }
 
@@ -107,9 +121,15 @@ func (app *localClient) Query(ctx context.Context, req *types.RequestQuery) (*ty
 }
 
 func (app *localClient) Commit(ctx context.Context, req *types.RequestCommit) (*types.ResponseCommit, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-Commit[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-Commit[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.Commit(ctx, req)
 }
 
@@ -151,36 +171,67 @@ func (app *localClient) ApplySnapshotChunk(ctx context.Context,
 }
 
 func (app *localClient) PrepareProposal(ctx context.Context, req *types.RequestPrepareProposal) (*types.ResponsePrepareProposal, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-PrepareProposal[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-PrepareProposal[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.PrepareProposal(ctx, req)
 }
 
 func (app *localClient) ProcessProposal(ctx context.Context, req *types.RequestProcessProposal) (*types.ResponseProcessProposal, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-ProcessProposal[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-ProcessProposal[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
 
 	return app.Application.ProcessProposal(ctx, req)
 }
 
 func (app *localClient) ExtendVote(ctx context.Context, req *types.RequestExtendVote) (*types.ResponseExtendVote, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-ExtendVote[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-ExtendVote[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.ExtendVote(ctx, req)
 }
 
 func (app *localClient) VerifyVoteExtension(ctx context.Context, req *types.RequestVerifyVoteExtension) (*types.ResponseVerifyVoteExtension, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-VerifyVoteExtension[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-VerifyVoteExtension[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.VerifyVoteExtension(ctx, req)
 }
 
 func (app *localClient) FinalizeBlock(ctx context.Context, req *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error) {
+	startTime := time.Now()
+	defer func() {
+		endTime := time.Now()
+		duration := endTime.Sub(startTime)
+		fmt.Printf("mm-comet-FinalizeBlock[%s]-bf\n", startTime)
+		fmt.Printf("mm-comet-FinalizeBlock[%s]-af:%s\n", endTime, duration)
+		app.mtx.Unlock()
+	}()
 	app.mtx.Lock()
-	defer app.mtx.Unlock()
-
 	return app.Application.FinalizeBlock(ctx, req)
 }

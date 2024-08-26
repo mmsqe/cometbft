@@ -1720,6 +1720,7 @@ func (cs *State) finalizeCommit(height int64) {
 		"num_txs", len(block.Txs),
 	)
 	logger.Debug("committed block", "block", log.NewLazySprintf("%v", block))
+	fmt.Printf("mm-comet-finalizeCommit[%s]:[%s], height:[%d]\n", time.Now(), block.Time, block.Height)
 
 	fail.Fail() // XXX
 
@@ -2460,6 +2461,7 @@ func (cs *State) signAddVote(
 	}
 	cs.sendInternalMessage(msgInfo{&VoteMessage{vote}, ""})
 	cs.Logger.Debug("signed and pushed vote", "height", cs.Height, "round", cs.Round, "vote", vote)
+	fmt.Printf("mm-comet-signAddVote[%d]:[%s], now:[%s]\n", cs.Height, vote.Timestamp, time.Now())
 }
 
 // updatePrivValidatorPubKey get's the private validator public key and

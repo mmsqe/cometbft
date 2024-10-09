@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/go-kit/kit/metrics"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	abcicli "github.com/cometbft/cometbft/abci/client"
 	"github.com/cometbft/cometbft/abci/types"
@@ -24,6 +25,7 @@ type AppConnConsensus interface {
 	VerifyVoteExtension(context.Context, *types.RequestVerifyVoteExtension) (*types.ResponseVerifyVoteExtension, error)
 	FinalizeBlock(context.Context, *types.RequestFinalizeBlock) (*types.ResponseFinalizeBlock, error)
 	Commit(context.Context) (*types.ResponseCommit, error)
+	Halt(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
 }
 
 type AppConnMempool interface {
@@ -109,6 +111,11 @@ func (app *appConnConsensus) Commit(ctx context.Context) (*types.ResponseCommit,
 	return app.appConn.Commit(ctx, &types.RequestCommit{})
 }
 
+func (app *appConnConsensus) Halt(ctx context.Context, em *emptypb.Empty) (*emptypb.Empty, error) {
+	defer addTimeSample(app.metrics.MethodTimingSeconds.With("method", "stop", "type", "sync"))()
+	return app.appConn.Halt(ctx, em)
+}
+
 //------------------------------------------------
 // Implements AppConnMempool (subset of abcicli.Client)
 
@@ -135,6 +142,11 @@ func (app *appConnMempool) Error() error {
 func (app *appConnMempool) Flush(ctx context.Context) error {
 	defer addTimeSample(app.metrics.MethodTimingSeconds.With("method", "flush", "type", "sync"))()
 	return app.appConn.Flush(ctx)
+}
+
+func (app *appConnMempool) Halt(ctx context.Context) error {
+	_, err := app.appConn.Halt(ctx, nil)
+	return err
 }
 
 func (app *appConnMempool) CheckTx(ctx context.Context, req *types.RequestCheckTx) (*types.ResponseCheckTx, error) {

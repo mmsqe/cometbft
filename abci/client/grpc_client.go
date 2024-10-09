@@ -9,6 +9,7 @@ import (
 
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/protobuf/types/known/emptypb"
 
 	"github.com/cometbft/cometbft/abci/types"
 	cmtnet "github.com/cometbft/cometbft/libs/net"
@@ -140,7 +141,7 @@ func (cli *grpcClient) StopForError(err error) {
 	cli.mtx.Unlock()
 
 	cli.Logger.Error(fmt.Sprintf("Stopping abci.grpcClient for error: %v", err.Error()))
-	if err := cli.Stop(); err != nil {
+	if err := cli.BaseService.Stop(); err != nil {
 		cli.Logger.Error("Error stopping abci.grpcClient", "err", err)
 	}
 }
@@ -159,7 +160,10 @@ func (cli *grpcClient) SetResponseCallback(resCb Callback) {
 	cli.mtx.Unlock()
 }
 
-//----------------------------------------
+// ----------------------------------------
+func (cli *grpcClient) Halt(ctx context.Context, em *emptypb.Empty) (*emptypb.Empty, error) {
+	return cli.client.Halt(ctx, em)
+}
 
 func (cli *grpcClient) CheckTxAsync(ctx context.Context, req *types.RequestCheckTx) (*ReqRes, error) {
 	res, err := cli.client.CheckTx(ctx, req, grpc.WaitForReady(true))

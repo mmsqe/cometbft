@@ -15,6 +15,7 @@ import (
 	cmtnet "github.com/cometbft/cometbft/libs/net"
 	"github.com/cometbft/cometbft/libs/service"
 	"github.com/cometbft/cometbft/libs/timer"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 const (
@@ -118,6 +119,11 @@ func (cli *socketClient) SetResponseCallback(resCb Callback) {
 	cli.mtx.Lock()
 	cli.resCb = resCb
 	cli.mtx.Unlock()
+}
+
+func (cli *socketClient) Halt(ctx context.Context, em *emptypb.Empty) (*emptypb.Empty, error) {
+	err := cli.BaseService.Stop()
+	return nil, err
 }
 
 func (cli *socketClient) CheckTxAsync(ctx context.Context, req *types.RequestCheckTx) (*ReqRes, error) {

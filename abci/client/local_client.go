@@ -6,6 +6,7 @@ import (
 	types "github.com/cometbft/cometbft/abci/types"
 	"github.com/cometbft/cometbft/libs/service"
 	cmtsync "github.com/cometbft/cometbft/libs/sync"
+	"google.golang.org/protobuf/types/known/emptypb"
 )
 
 // NOTE: use defer to unlock mutex because Application might panic (e.g., in
@@ -42,6 +43,10 @@ func (app *localClient) SetResponseCallback(cb Callback) {
 	app.mtx.Lock()
 	app.Callback = cb
 	app.mtx.Unlock()
+}
+
+func (app *localClient) Halt(ctx context.Context, em *emptypb.Empty) (*emptypb.Empty, error) {
+	return app.Application.Halt(ctx, em)
 }
 
 func (app *localClient) CheckTxAsync(ctx context.Context, req *types.RequestCheckTx) (*ReqRes, error) {

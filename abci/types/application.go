@@ -1,12 +1,18 @@
 package types
 
-import "context"
+import (
+	"context"
+
+	emptypb "google.golang.org/protobuf/types/known/emptypb"
+)
 
 //go:generate ../../scripts/mockery_generate.sh Application
 
 // Application is an interface that enables any finite, deterministic state machine
 // to be driven by a blockchain-based replication engine via the ABCI.
 type Application interface {
+	Halt(context.Context, *emptypb.Empty) (*emptypb.Empty, error)
+
 	// Info/Query Connection
 	Info(context.Context, *RequestInfo) (*ResponseInfo, error)    // Return application info
 	Query(context.Context, *RequestQuery) (*ResponseQuery, error) // Query for state
@@ -43,6 +49,10 @@ type BaseApplication struct{}
 
 func NewBaseApplication() *BaseApplication {
 	return &BaseApplication{}
+}
+
+func (BaseApplication) Halt(context.Context, *emptypb.Empty) (*emptypb.Empty, error) {
+	return nil, nil
 }
 
 func (BaseApplication) Info(context.Context, *RequestInfo) (*ResponseInfo, error) {

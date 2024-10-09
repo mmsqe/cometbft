@@ -86,6 +86,10 @@ func (blockExec *BlockExecutor) Store() Store {
 	return blockExec.store
 }
 
+func (blockExec *BlockExecutor) HaltProxyApp(ctx context.Context) {
+	blockExec.proxyApp.Halt(ctx, nil)
+}
+
 // SetEventBus - sets the event bus for publishing block related events.
 // If not called, it defaults to types.NopEventBus.
 func (blockExec *BlockExecutor) SetEventBus(eventBus types.BlockEventPublisher) {

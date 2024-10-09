@@ -794,6 +794,7 @@ func (cs *State) receiveRoutine(maxSteps int) {
 
 		cs.wal.Wait()
 		close(cs.done)
+		cs.blockExec.HaltProxyApp(context.TODO())
 	}
 
 	defer func() {

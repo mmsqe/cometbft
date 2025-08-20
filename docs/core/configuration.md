@@ -352,6 +352,11 @@ max_tx_bytes = 1048576
 # XXX: Unused due to https://github.com/tendermint/tendermint/issues/5796
 max_batch_bytes = 0
 
+# ExperimentalPublishEventPendingTx enables publishing a `PendingTx` event when a new transaction is added to the mempool.
+# Note: Enabling this feature may introduce potential delays in transaction processing due to blocking behavior.
+# Use this feature with caution and consider the impact on transaction processing performance.
+experimental_publish_event_pending_tx = {{ .Mempool.ExperimentalPublishEventPendingTx }}
+
 #######################################################
 ###         State Sync Configuration Options        ###
 #######################################################

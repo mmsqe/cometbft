@@ -229,6 +229,7 @@ func createMempoolAndMempoolReactor(
 	config *cfg.Config,
 	proxyApp proxy.AppConns,
 	state sm.State,
+	eventBus *types.EventBus,
 	memplMetrics *mempl.Metrics,
 	logger log.Logger,
 ) (mempl.Mempool, p2p.Reactor) {
@@ -236,13 +237,23 @@ func createMempoolAndMempoolReactor(
 	// allow empty string for backward compatibility
 	case cfg.MempoolTypeFlood, "":
 		logger = logger.With("module", "mempool")
+		options := []mempl.CListMempoolOption{
+			mempl.WithMetrics(memplMetrics),
+			mempl.WithPreCheck(sm.TxPreCheck(state)),
+			mempl.WithPostCheck(sm.TxPostCheck(state)),
+		}
+		if config.Mempool.ExperimentalPublishEventPendingTx {
+			options = append(options, mempl.WithNewTxCallback(func(tx types.Tx) {
+				_ = eventBus.PublishEventPendingTx(types.EventDataPendingTx{
+					Tx: tx,
+				})
+			}))
+		}
 		mp := mempl.NewCListMempool(
 			config.Mempool,
 			proxyApp.Mempool(),
 			state.LastBlockHeight,
-			mempl.WithMetrics(memplMetrics),
-			mempl.WithPreCheck(sm.TxPreCheck(state)),
-			mempl.WithPostCheck(sm.TxPostCheck(state)),
+			options...,
 		)
 		mp.SetLogger(logger)
 		reactor := mempl.NewReactor(

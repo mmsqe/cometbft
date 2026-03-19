@@ -67,7 +67,7 @@ func newMempoolWithApp(cc proxy.ClientCreator) (*CListMempool, cleanupFunc) {
 }
 
 func newMempoolWithAppAndConfig(cc proxy.ClientCreator, cfg *config.Config) (*CListMempool, cleanupFunc) {
-	appConnMem, _ := cc.NewABCIClient()
+	appConnMem, _ := cc.NewABCIMempoolClient()
 	appConnMem.SetLogger(log.TestingLogger().With("module", "abci-client", "connection", "mempool"))
 	err := appConnMem.Start()
 	if err != nil {
@@ -426,7 +426,7 @@ func TestSerialReap(t *testing.T) {
 	mp, cleanup := newMempoolWithApp(cc)
 	defer cleanup()
 
-	appConnCon, _ := cc.NewABCIClient()
+	appConnCon, _ := cc.NewABCIConsensusClient()
 	appConnCon.SetLogger(log.TestingLogger().With("module", "abci-client", "connection", "consensus"))
 	err := appConnCon.Start()
 	require.Nil(t, err)
@@ -631,7 +631,7 @@ func TestMempoolTxsBytes(t *testing.T) {
 	require.NoError(t, err)
 	assert.EqualValues(t, 10, mp.SizeBytes())
 
-	appConnCon, _ := cc.NewABCIClient()
+	appConnCon, _ := cc.NewABCIConsensusClient()
 	appConnCon.SetLogger(log.TestingLogger().With("module", "abci-client", "connection", "consensus"))
 	err = appConnCon.Start()
 	require.Nil(t, err)
